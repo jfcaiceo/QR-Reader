@@ -65,18 +65,16 @@ public class MainWindow extends JFrame {
 				try
 				{
 					String path = lblImagenQR.getIcon().toString();
-					Object obj = new FileInputStream(path);
+					String[] obj = new String[1];
+					obj[0] = path;
 					Resource qr = new QRReader();
-
-					qr.addListener(new ResourceEventListener() {
-					    public void resourceEventFinished(ResourceEvent evt) {
-					    	QRCode code = (QRCode)evt.getData();
-					    	String content = "Texto: "+code.getText()+" Tipo: "+code.getType();
-							lblContent.setText(content);
-						}
-					});
+					QRObserver observer = new QRObserver();
+					qr.setObserver(observer);
+					qr.reciveAction(obj, 0);
+					QRCode code = (QRCode)observer.getQRCode();
+			    	String content = "Texto: "+code.getText()+" Tipo: "+code.getType();
+					lblContent.setText(content);
 					
-					qr.consume(obj);
 				}
 				catch (Exception ex) 
 				{

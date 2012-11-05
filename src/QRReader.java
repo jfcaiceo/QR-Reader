@@ -1,5 +1,8 @@
 import java.io.FileInputStream;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -12,21 +15,22 @@ import com.google.zxing.common.HybridBinarizer;
 
 public class QRReader implements Resource{
 
-	// Create the listener list
-    protected javax.swing.event.EventListenerList listenerList =
-        new javax.swing.event.EventListenerList();
+	private int id;
+	List<IConsuptionObs> observers = new ArrayList<IConsuptionObs>();
 	
-	public void consume(Object data) {
+	@Override
+	public boolean reciveAction(String[] data, int num) {
 		read(data);
+		return true;
 	}
 	
-	private void read(Object obj){
+	private void read(String[] data){
 
 		Result result = null;
 		BinaryBitmap binaryBitmap;
 
 		try{
-			FileInputStream file = (FileInputStream) obj;
+			FileInputStream file = new FileInputStream(data[0]);
 			binaryBitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(ImageIO.read(file))));
 
 			result = new MultiFormatReader().decode(binaryBitmap);
@@ -36,34 +40,54 @@ public class QRReader implements Resource{
 			QRCode code = new QRCode(result.getText(), ResultParser.parseResult(result).getType().toString());
 
 			//Fire the event with the QRCode
-			fireFinishedEvent(new ResourceEvent(this, code));
+			
+			notifyAllObservers(code);
 
 		}catch(Exception ex){
 
-			fireFinishedEvent(new ResourceEvent(this, null));
+			notifyAllObservers(null);
 		}
 
 	}
 
-    // This methods allows classes to register for MyEvents
-    public void addListener(ResourceEventListener listener) {
-        listenerList.add(ResourceEventListener.class, listener);
-    }
-
-    // This methods allows classes to unregister for MyEvents
-    public void removeListener(ResourceEventListener listener) {
-        listenerList.remove(ResourceEventListener.class, listener);
-    }
-
     // This private class is used to fire MyEvents
-    void fireFinishedEvent(ResourceEvent evt) {
-        Object[] listeners = listenerList.getListenerList();
-        // Each listener occupies two elements - the first is the listener class
-        // and the second is the listener instance
-        for (int i=0; i<listeners.length; i+=2) {
-            if (listeners[i]==ResourceEventListener.class) {
-                ((ResourceEventListener)listeners[i+1]).resourceEventFinished(evt);
-            }
+    void notifyAllObservers(QRCode code) {
+    	Iterator<IConsuptionObs> it= observers.iterator();
+
+        while(it.hasNext())
+        {
+        	QRObserver o = (QRObserver)it.next();
+        	o.update(code);
         }
     }
+
+	@Override
+	public void setObserver(IConsuptionObs observer) {
+		// TODO Auto-generated method stub
+		observers.add(observer);
+	}
+
+	@Override
+	public boolean isAvailable() {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	@Override
+	public void cancelConsuption() {
+		// TODO Auto-generated method stub
+		return;
+	}
+
+	@Override
+	public int getStatus() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public void setId(int num) {
+		// TODO Auto-generated method stub
+		id = num;
+	}
 }
